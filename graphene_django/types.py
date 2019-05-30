@@ -239,8 +239,3 @@ class DjangoObjectType(ObjectType):
             return queryset.get(pk=id)
         except cls._meta.model.DoesNotExist:
             return None
-
-
-class ErrorType(ObjectType):
-    field = String(required=True)
-    messages = List(NonNull(String), required=True)
