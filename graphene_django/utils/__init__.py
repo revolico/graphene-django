@@ -3,6 +3,7 @@ from .utils import (
     get_reverse_fields,
     maybe_queryset,
     auth_resolver,
+    has_permissions,
     get_model_fields,
     is_valid_django_model,
     import_single_dispatch,
