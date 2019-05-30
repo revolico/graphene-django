@@ -13,7 +13,7 @@ class MyForm(forms.Form):
 class PetForm(forms.ModelForm):
     class Meta:
         model = Pet
-        fields = '__all__'
+        fields = "__all__"
     test_camel = forms.IntegerField(required=False)
 
 
@@ -67,7 +67,7 @@ class ModelFormMutationTests(TestCase):
         class PetMutation(DjangoModelFormMutation):
             class Meta:
                 form_class = PetForm
-                exclude_fields = ['id']
+                exclude_fields = ["id"]
 
         self.assertEqual(PetMutation._meta.model, Pet)
         self.assertEqual(PetMutation._meta.return_field_name, "pet")
@@ -103,7 +103,9 @@ class ModelFormMutationTests(TestCase):
 
         pet = Pet.objects.create(name="Axel", age=10)
 
-        result = PetMutation.mutate_and_get_payload(None, None, id=pet.pk, name="Mia", age=10)
+        result = PetMutation.mutate_and_get_payload(
+            None, None, id=pet.pk, name="Mia", age=10
+        )
 
         self.assertEqual(Pet.objects.count(), 1)
         pet.refresh_from_db()
