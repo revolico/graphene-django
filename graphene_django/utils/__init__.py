@@ -8,6 +8,7 @@ from .utils import (
     is_valid_django_model,
     maybe_queryset,
     auth_resolver,
+    has_permissions,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "import_single_dispatch",
     "GraphQLTestCase",
     "auth_resolver",
+    "has_permissions",
 ]
