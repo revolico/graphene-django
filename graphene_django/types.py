@@ -26,12 +26,11 @@ from .utils import (
 if six.PY3:
     from typing import Type
 
-
 ALL_FIELDS = "__all__"
 
 
 def construct_fields(
-    model, registry, only_fields, exclude_fields, convert_choices_to_enum
+        model, registry, only_fields, exclude_fields, convert_choices_to_enum
 ):
     _model_fields = get_model_fields(model)
 
@@ -165,27 +164,28 @@ class DjangoObjectType(ObjectType):
 
     At least one of the permissions must be accomplished in order to resolve the field.
     """
+
     @classmethod
     def __init_subclass_with_meta__(
-        cls,
-        model=None,
-        registry=None,
-        skip_registry=False,
-        only_fields=(),  # deprecated in favour of `fields`
-        fields=(),
-        exclude_fields=(),  # deprecated in favour of `exclude`
-        exclude=(),
-        filter_fields=None,
-        filterset_class=None,
-        connection=None,
-        connection_class=None,
-        use_connection=None,
-        interfaces=(),
-        field_to_permission=None,
-        permission_to_field=None,
-        convert_choices_to_enum=True,
-        _meta=None,
-        **options
+            cls,
+            model=None,
+            registry=None,
+            skip_registry=False,
+            only_fields=(),  # deprecated in favour of `fields`
+            fields=(),
+            exclude_fields=(),  # deprecated in favour of `exclude`
+            exclude=(),
+            filter_fields=None,
+            filterset_class=None,
+            connection=None,
+            connection_class=None,
+            use_connection=None,
+            interfaces=(),
+            field_to_permission=None,
+            permission_to_field=None,
+            convert_choices_to_enum=True,
+            _meta=None,
+            **options
     ):
         assert is_valid_django_model(model), (
             'You need to pass a valid Django Model in {}.Meta, received "{}".'
@@ -351,7 +351,7 @@ class DjangoObjectType(ObjectType):
     def __set_as_nullable__(cls, field_permissions, model, registry):
         """Set restricted fields as nullable"""
         django_fields = yank_fields_from_attrs(
-            construct_fields(model, registry, field_permissions.keys(), ()),
+            construct_fields(model, registry, field_permissions.keys(), (), True),
             _as=Field,
         )
         for name, field in django_fields.items():
