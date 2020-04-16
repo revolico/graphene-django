@@ -312,10 +312,10 @@ class ModelFormMutationTests(TestCase):
         # A pet was not created
         self.assertEqual(Pet.objects.count(), 0)
 
-        fields_w_error = [e.field for e in result.errors]
+        fields_w_error = {e.field: e.messages for e in result.errors}
         self.assertEqual(len(result.errors), 3)
         self.assertIn("test_camel", fields_w_error)
-        self.assertEqual(fields_w_error['testCamel'], ["Enter a whole number."])
+        self.assertEqual(fields_w_error['test_camel'], ["Enter a whole number."])
         self.assertIn("name", fields_w_error)
         self.assertEqual(fields_w_error['name'], ["This field is required."])
         self.assertIn("age", fields_w_error)
