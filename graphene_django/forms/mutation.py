@@ -14,7 +14,7 @@ from graphene.utils.str_converters import to_camel_case
 from graphene_django.registry import get_global_registry
 
 from ..types import ErrorType
-from .converter import convert_form_field, convert_form_field_with_choices
+from .converter import convert_form_field_with_choices
 
 
 def fields_for_form(form, only_fields, exclude_fields):
@@ -22,8 +22,8 @@ def fields_for_form(form, only_fields, exclude_fields):
     for name, field in form.fields.items():
         is_not_in_only = only_fields and name not in only_fields
         is_excluded = (
-            name
-            in exclude_fields  # or
+                name
+                in exclude_fields  # or
             # name in already_created_fields
         )
 
@@ -81,7 +81,7 @@ class DjangoFormMutation(BaseDjangoFormMutation):
 
     @classmethod
     def __init_subclass_with_meta__(
-        cls, form_class=None, mirror_input=False, only_fields=(), exclude_fields=(), **options
+            cls, form_class=None, mirror_input=False, only_fields=(), exclude_fields=(), **options
     ):
 
         if not form_class:
@@ -122,13 +122,13 @@ class DjangoModelFormMutation(BaseDjangoFormMutation):
 
     @classmethod
     def __init_subclass_with_meta__(
-        cls,
-        form_class=None,
-        model=None,
-        return_field_name=None,
-        only_fields=(),
-        exclude_fields=(),
-        **options
+            cls,
+            form_class=None,
+            model=None,
+            return_field_name=None,
+            only_fields=(),
+            exclude_fields=(),
+            **options
     ):
 
         if not form_class:
