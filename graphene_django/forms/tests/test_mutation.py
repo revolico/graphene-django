@@ -5,7 +5,7 @@ from py.test import raises
 
 from graphene import ObjectType, Schema, String, Field
 from graphene_django import DjangoObjectType
-from graphene_django.tests.models import Film, Pet
+from graphene_django.tests.models import Film, Pet, FilmDetails
 
 from ...settings import graphene_settings
 from ..mutation import DjangoFormMutation, DjangoModelFormMutation
@@ -52,6 +52,7 @@ class FilmType(DjangoObjectType):
 
 def test_needs_form_class():
     with raises(Exception) as exc:
+
         class MyMutation(DjangoFormMutation):
             pass
 
@@ -218,85 +219,52 @@ class ModelFormMutationTests(TestCase):
         self.assertIn("client_mutation_id", PetMutation.Input._meta.fields)
         self.assertNotIn("id", PetMutation.Input._meta.fields)
 
+    def test_return_field_name_is_camelcased(self):
+        class PetMutation(DjangoModelFormMutation):
+            class Meta:
+                form_class = PetForm
+                model = FilmDetails
+
+        self.assertEqual(PetMutation._meta.model, FilmDetails)
+        self.assertEqual(PetMutation._meta.return_field_name, "filmDetails")
+
     def test_custom_return_field_name(self):
         class PetMutation(DjangoModelFormMutation):
             class Meta:
                 form_class = PetForm
-                model = Pet
+                model = Film
                 return_field_name = "animal"
 
-        self.assertEqual(PetMutation._meta.model, Pet)
+        self.assertEqual(PetMutation._meta.model, Film)
         self.assertEqual(PetMutation._meta.return_field_name, "animal")
         self.assertIn("animal", PetMutation._meta.fields)
 
-    def test_model_form_mutation_mutate_existing(self):
+    def test_model_form_mutation_mutate(self):
         class PetMutation(DjangoModelFormMutation):
-            pet = Field(PetType)
-
             class Meta:
                 form_class = PetForm
 
-        class Mutation(ObjectType):
-            pet_mutation = PetMutation.Field()
-
-        schema = Schema(query=MockQuery, mutation=Mutation)
-
         pet = Pet.objects.create(name="Axel", age=10)
 
-        result = schema.execute(
-            """ mutation PetMutation($pk: ID!) {
-                petMutation(input: { id: $pk, name: "Mia", age: 10 }) {
-                    pet {
-                        name
-                        age
-                    }
-                }
-            }
-            """,
-            variable_values={"pk": pet.pk},
-        )
-
-        self.assertIs(result.errors, None)
-        self.assertEqual(result.data["petMutation"]["pet"], {"name": "Mia", "age": 10})
+        result = PetMutation.mutate_and_get_payload(None, None, id=pet.pk, name="Mia", age=10)
 
         self.assertEqual(Pet.objects.count(), 1)
         pet.refresh_from_db()
         self.assertEqual(pet.name, "Mia")
+        self.assertEqual(result.errors, [])
 
-    def test_model_form_mutation_creates_new(self):
+    def test_model_form_mutation_updates_existing_(self):
         class PetMutation(DjangoModelFormMutation):
-            pet = Field(PetType)
-
             class Meta:
                 form_class = PetForm
 
-        class Mutation(ObjectType):
-            pet_mutation = PetMutation.Field()
-
-        schema = Schema(query=MockQuery, mutation=Mutation)
-
-        result = schema.execute(
-            """ mutation PetMutation {
-                petMutation(input: { name: "Mia", age: 10 }) {
-                    pet {
-                        name
-                        age
-                    }
-                    errors {
-                        field
-                        messages
-                    }
-                }
-            }
-            """
-        )
-        self.assertIs(result.errors, None)
-        self.assertEqual(result.data["petMutation"]["pet"], {"name": "Mia", "age": 10})
+        result = PetMutation.mutate_and_get_payload(None, None, name="Mia", age=10)
 
         self.assertEqual(Pet.objects.count(), 1)
         pet = Pet.objects.get()
         self.assertEqual(pet.name, "Mia")
         self.assertEqual(pet.age, 10)
+        self.assertEqual(result.errors, [])
 
     def test_model_form_mutation_invalid_input(self):
         class PetMutation(DjangoModelFormMutation):
