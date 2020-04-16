@@ -147,8 +147,6 @@ class DjangoModelFormMutation(BaseDjangoFormMutation):
 
         registry = get_global_registry()
         model_type = registry.get_type_for_model(model)
-        if not model_type:
-            raise Exception("No type registered for model: {}".format(model.__name__))
 
         if not return_field_name:
             model_name = model.__name__

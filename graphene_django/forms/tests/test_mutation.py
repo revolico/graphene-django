@@ -28,6 +28,7 @@ class PetForm(forms.ModelForm):
     class Meta:
         model = Pet
         fields = '__all__'
+
     test_camel = forms.IntegerField(required=False)
 
     def clean_age(self):
@@ -51,7 +52,6 @@ class FilmType(DjangoObjectType):
 
 def test_needs_form_class():
     with raises(Exception) as exc:
-
         class MyMutation(DjangoFormMutation):
             pass
 
@@ -150,6 +150,38 @@ class FormMutationTests(TestCase):
         self.assertIs(result.errors, None)
         self.assertEqual(result.data["myMutation"]["errors"], [])
         self.assertEqual(result.data["myMutation"]["text"], "VALID_INPUT")
+
+    def test_default_meta_fields(self):
+        class MyMutation(DjangoFormMutation):
+            class Meta:
+                form_class = MyForm
+
+        self.assertNotIn("text", MyMutation._meta.fields)
+
+    def test_mirror_meta_fields(self):
+        class MyMutation(DjangoFormMutation):
+            class Meta:
+                form_class = MyForm
+                mirror_input = True
+
+        self.assertIn("text", MyMutation._meta.fields)
+
+    def test_default_input_meta_fields(self):
+        class MyMutation(DjangoFormMutation):
+            class Meta:
+                form_class = MyForm
+
+        self.assertIn("client_mutation_id", MyMutation.Input._meta.fields)
+        self.assertIn("text", MyMutation.Input._meta.fields)
+
+    def test_exclude_fields_input_meta_fields(self):
+        class MyMutation(DjangoFormMutation):
+            class Meta:
+                form_class = MyForm
+                exclude_fields = ['text']
+
+        self.assertNotIn("text", MyMutation.Input._meta.fields)
+        self.assertIn("client_mutation_id", MyMutation.Input._meta.fields)
 
 
 class ModelFormMutationTests(TestCase):
@@ -297,7 +329,7 @@ class ModelFormMutationTests(TestCase):
         self.assertEqual(result.data["petMutation"]["pet"], None)
         self.assertEqual(
             result.data["petMutation"]["errors"],
-            [{"field": "age", "messages": ["Too old"],}],
+            [{"field": "age", "messages": ["Too old"], }],
         )
 
         self.assertEqual(Pet.objects.count(), 0)
@@ -320,36 +352,3 @@ class ModelFormMutationTests(TestCase):
         self.assertEqual(fields_w_error['name'], ["This field is required."])
         self.assertIn("age", fields_w_error)
         self.assertEqual(fields_w_error['age'], ["This field is required."])
-
-
-class FormMutationTests(TestCase):
-    def test_default_meta_fields(self):
-        class MyMutation(DjangoFormMutation):
-            class Meta:
-                form_class = MyForm
-        self.assertNotIn("text", MyMutation._meta.fields)
-
-    def test_mirror_meta_fields(self):
-        class MyMutation(DjangoFormMutation):
-            class Meta:
-                form_class = MyForm
-                mirror_input = True
-
-        self.assertIn("text", MyMutation._meta.fields)
-
-    def test_default_input_meta_fields(self):
-        class MyMutation(DjangoFormMutation):
-            class Meta:
-                form_class = MyForm
-
-        self.assertIn("client_mutation_id", MyMutation.Input._meta.fields)
-        self.assertIn("text", MyMutation.Input._meta.fields)
-
-    def test_exclude_fields_input_meta_fields(self):
-        class MyMutation(DjangoFormMutation):
-            class Meta:
-                form_class = MyForm
-                exclude_fields = ['text']
-
-        self.assertNotIn("text", MyMutation.Input._meta.fields)
-        self.assertIn("client_mutation_id", MyMutation.Input._meta.fields)
