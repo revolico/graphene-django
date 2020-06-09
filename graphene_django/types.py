@@ -145,8 +145,8 @@ class DjangoObjectType(ObjectType):
                     set(field_permissions.get(field, ()) + permission_to_all_fields)
                 )
 
-        if field_permissions and not interfaces:
-            cls.__set_as_nullable__(field_permissions, model, registry)
+        if field_permissions:
+            cls.__set_as_nullable__(field_permissions, model, registry, interfaces)
 
         super(DjangoObjectType, cls).__init_subclass_with_meta__(
             _meta=_meta, interfaces=interfaces, **options
@@ -205,7 +205,7 @@ class DjangoObjectType(ObjectType):
             setattr(cls, attr, get_auth_resolver(field_name, field_permissions, resolver))
 
     @classmethod
-    def __set_as_nullable__(cls, field_permissions, model, registry):
+    def __set_as_nullable__(cls, field_permissions, model, registry, interfaces):
         """Set restricted fields as nullable"""
         django_fields = yank_fields_from_attrs(
             construct_fields(model, registry, field_permissions.keys(), ()),
@@ -215,6 +215,11 @@ class DjangoObjectType(ObjectType):
             if hasattr(field, '_type') and isinstance(field._type, NonNull):
                 field._type = field._type._of_type
                 setattr(cls, name, field)
+
+                for interface in interfaces:
+                    interface_fields = interface._meta.fields
+                    if name in interface_fields:
+                        interface_fields[name] = field
 
     def resolve_id(self, info):
         return self.pk
