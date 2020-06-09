@@ -84,6 +84,7 @@ class DjangoObjectType(ObjectType):
         interfaces=(),
         field_to_permission=None,
         permission_to_field=None,
+        permission_to_all_fields=None,
         _meta=None,
         **options
     ):
@@ -135,7 +136,16 @@ class DjangoObjectType(ObjectType):
         _meta.connection = connection
 
         field_permissions = cls.__get_field_permissions__(field_to_permission, permission_to_field)
-        if field_permissions:
+
+        if permission_to_all_fields:
+            for field in django_fields.keys():
+                if field == 'id':
+                    continue
+                field_permissions[field] = tuple(
+                    set(field_permissions.get(field, ()) + permission_to_all_fields)
+                )
+
+        if field_permissions and not interfaces:
             cls.__set_as_nullable__(field_permissions, model, registry)
 
         super(DjangoObjectType, cls).__init_subclass_with_meta__(
