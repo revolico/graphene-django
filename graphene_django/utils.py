@@ -142,6 +142,8 @@ def auth_resolver(parent_resolver, permissions, attname, default_value, raise_ex
     user_permissions = args.pop("user_permissions", lambda _: True)
 
     print(permissions)
+    print(user.email)
+    print(list(user.user_permissions.all()))
     print(has_permissions(user, permissions))
     print(user_permissions(user))
 
