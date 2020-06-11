@@ -43,7 +43,7 @@ def get_auth_resolver(name, permissions, resolver=None, raise_exception=False, u
     :param user_permissions: Permission for user
     :return: Middleware resolver to check permissions
     """
-    return partial(auth_resolver, resolver, permissions, name, None, raise_exception, user_permissions)
+    return partial(auth_resolver, resolver, permissions, name, None, raise_exception, user_permissions=user_permissions)
 
 
 class DjangoObjectTypeOptions(ObjectTypeOptions):
