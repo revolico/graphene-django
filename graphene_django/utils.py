@@ -139,10 +139,12 @@ def auth_resolver(parent_resolver, permissions, attname, default_value, raise_ex
         raise PermissionDenied()
     user = info.context.user
 
-    permission_classes = args.pop("permission_classes", lambda _: True)
-
     print(root)
     print(args)
+
+    permission_classes = args.pop("permission_classes", lambda _: True)
+
+
 
     if has_permissions(user, permissions) and all((perm.has_permission(info) for perm in permission_classes)):
         if parent_resolver:
