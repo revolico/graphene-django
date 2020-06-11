@@ -33,16 +33,17 @@ def construct_fields(model, registry, only_fields, exclude_fields):
     return fields
 
 
-def get_auth_resolver(name, permissions, resolver=None, raise_exception=False):
+def get_auth_resolver(name, permissions, resolver=None, raise_exception=False, user_permissions=None):
     """
     Get middleware resolver to handle field permissions
     :param name: Field name
     :param permissions: List of permissions
     :param resolver: Field resolver
     :param raise_exception: If True a PermissionDenied is raised
+    :param user_permissions: Permission for user
     :return: Middleware resolver to check permissions
     """
-    return partial(auth_resolver, resolver, permissions, name, None, raise_exception)
+    return partial(auth_resolver, resolver, permissions, name, None, raise_exception, user_permissions)
 
 
 class DjangoObjectTypeOptions(ObjectTypeOptions):
@@ -205,7 +206,10 @@ class DjangoObjectType(ObjectType):
             if not hasattr(field_permissions, '__iter__'):
                 field_permissions = tuple(field_permissions)
 
-            setattr(cls, attr, get_auth_resolver(field_name, field_permissions, resolver, raise_exception))
+            user_permissions = getattr(cls, 'user_permissions', lambda user: True)
+
+            setattr(cls, attr,
+                    get_auth_resolver(field_name, field_permissions, resolver, raise_exception, user_permissions))
 
     @classmethod
     def __set_as_nullable__(cls, field_permissions, model, registry, interfaces):
