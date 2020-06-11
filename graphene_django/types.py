@@ -137,28 +137,25 @@ class DjangoObjectType(ObjectType):
         _meta.connection = connection
 
         field_permissions = cls.__get_field_permissions__(field_to_permission, permission_to_field)
+        fields_raise_exception = {}
 
         if permission_to_all_fields:
             for name, field in django_fields.items():
                 if name == "id":
                     continue
-                field_permissions[name] = {
-                    "perms": tuple(
+                field_permissions[name] = tuple(
                         set(field_permissions.get(name, ()) + permission_to_all_fields)
-                    ),
-                    "raise_exception": hasattr(field, "_type") and isinstance(field._type, NonNull),
-                }
+                    )
+                fields_raise_exception[name] = hasattr(field, "_type") and isinstance(field._type, NonNull)
 
         super(DjangoObjectType, cls).__init_subclass_with_meta__(
             _meta=_meta, interfaces=interfaces, **options
         )
 
         if field_permissions:
-            cls.__set_permissions_resolvers__(field_permissions)
+            cls.__set_permissions_resolvers__(field_permissions, fields_raise_exception)
 
-        cls.field_permissions = {
-            name: value["perms"] for name, value in field_permissions.items()
-        }
+        cls.field_permissions = field_permissions
 
         if not skip_registry:
             registry.register(cls)
@@ -196,11 +193,10 @@ class DjangoObjectType(ObjectType):
         return permissions
 
     @classmethod
-    def __set_permissions_resolvers__(cls, permissions):
+    def __set_permissions_resolvers__(cls, permissions, fields_raise_exception):
         """Set permission resolvers"""
-        for field_name, value in permissions.items():
-            field_permissions = value["perms"]
-            raise_exception = value["raise_exception"]
+        for field_name, field_permissions in permissions.items():
+            raise_exception = fields_raise_exception.get(field_name, False)
             attr = "resolve_{}".format(field_name)
             resolver = getattr(
                 cls._meta.fields[field_name], "resolver", None
