@@ -33,17 +33,18 @@ def construct_fields(model, registry, only_fields, exclude_fields):
     return fields
 
 
-def get_auth_resolver(name, permissions, resolver=None, raise_exception=False, user_permissions=None):
+def get_auth_resolver(name, permissions, resolver=None, raise_exception=False, permission_classes=None):
     """
     Get middleware resolver to handle field permissions
     :param name: Field name
     :param permissions: List of permissions
     :param resolver: Field resolver
     :param raise_exception: If True a PermissionDenied is raised
-    :param user_permissions: Permission for user
+    :param permission_classes: Permission for user
     :return: Middleware resolver to check permissions
     """
-    return partial(auth_resolver, resolver, permissions, name, None, raise_exception, user_permissions=user_permissions)
+    return partial(auth_resolver, resolver, permissions, name, None, raise_exception,
+                   permission_classes=permission_classes)
 
 
 class DjangoObjectTypeOptions(ObjectTypeOptions):
@@ -71,24 +72,25 @@ class DjangoObjectType(ObjectType):
 
     At least one of the permissions must be accomplished in order to resolve the field.
     """
+
     @classmethod
     def __init_subclass_with_meta__(
-        cls,
-        model=None,
-        registry=None,
-        skip_registry=False,
-        only_fields=(),
-        exclude_fields=(),
-        filter_fields=None,
-        connection=None,
-        connection_class=None,
-        use_connection=None,
-        interfaces=(),
-        field_to_permission=None,
-        permission_to_field=None,
-        permission_to_all_fields=None,
-        _meta=None,
-        **options
+            cls,
+            model=None,
+            registry=None,
+            skip_registry=False,
+            only_fields=(),
+            exclude_fields=(),
+            filter_fields=None,
+            connection=None,
+            connection_class=None,
+            use_connection=None,
+            interfaces=(),
+            field_to_permission=None,
+            permission_to_field=None,
+            permission_to_all_fields=None,
+            _meta=None,
+            **options
     ):
         assert is_valid_django_model(model), (
             'You need to pass a valid Django Model in {}.Meta, received "{}".'
@@ -145,8 +147,8 @@ class DjangoObjectType(ObjectType):
                 if name == "id":
                     continue
                 field_permissions[name] = tuple(
-                        set(field_permissions.get(name, ()) + permission_to_all_fields)
-                    )
+                    set(field_permissions.get(name, ()) + permission_to_all_fields)
+                )
                 fields_raise_exception[name] = hasattr(field, "_type") and isinstance(field._type, NonNull)
 
         super(DjangoObjectType, cls).__init_subclass_with_meta__(
@@ -206,10 +208,10 @@ class DjangoObjectType(ObjectType):
             if not hasattr(field_permissions, '__iter__'):
                 field_permissions = tuple(field_permissions)
 
-            user_permissions = getattr(cls, 'user_permissions', lambda user: True)
+            permission_classes = getattr(cls, 'permission_classes', None)
 
             setattr(cls, attr,
-                    get_auth_resolver(field_name, field_permissions, resolver, raise_exception, user_permissions))
+                    get_auth_resolver(field_name, field_permissions, resolver, raise_exception, permission_classes))
 
     @classmethod
     def __set_as_nullable__(cls, field_permissions, model, registry, interfaces):

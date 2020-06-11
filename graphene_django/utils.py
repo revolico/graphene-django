@@ -139,14 +139,11 @@ def auth_resolver(parent_resolver, permissions, attname, default_value, raise_ex
         raise PermissionDenied()
     user = info.context.user
 
-    print(root)
-    print(args)
+    permission_classes = args.pop("permission_classes", None)
 
-    permission_classes = args.pop("permission_classes", lambda _: True)
-
-
-
-    if has_permissions(user, permissions) and all((perm.has_permission(info) for perm in permission_classes)):
+    if has_permissions(user, permissions) and \
+            (not permission_classes or all(
+                (perm.has_permission(user_logged=user, instance=root, **args) for perm in permission_classes))):
         if parent_resolver:
             # A resolver is provided in the class
             return resolve_bound_resolver(parent_resolver, root, info, **args)
