@@ -33,15 +33,16 @@ def construct_fields(model, registry, only_fields, exclude_fields):
     return fields
 
 
-def get_auth_resolver(name, permissions, resolver=None):
+def get_auth_resolver(name, permissions, resolver=None, raise_exception=False):
     """
     Get middleware resolver to handle field permissions
     :param name: Field name
     :param permissions: List of permissions
     :param resolver: Field resolver
+    :param raise_exception: If True a PermissionDenied is raised
     :return: Middleware resolver to check permissions
     """
-    return partial(auth_resolver, resolver, permissions, name, None, False)
+    return partial(auth_resolver, resolver, permissions, name, None, raise_exception)
 
 
 class DjangoObjectTypeOptions(ObjectTypeOptions):
@@ -138,15 +139,15 @@ class DjangoObjectType(ObjectType):
         field_permissions = cls.__get_field_permissions__(field_to_permission, permission_to_field)
 
         if permission_to_all_fields:
-            for field in django_fields.keys():
-                if field == 'id':
+            for name, field in django_fields.items():
+                if name == "id":
                     continue
-                field_permissions[field] = tuple(
-                    set(field_permissions.get(field, ()) + permission_to_all_fields)
-                )
-
-        if field_permissions:
-            cls.__set_as_nullable__(field_permissions, model, registry, interfaces)
+                field_permissions[name] = {
+                    "perms": tuple(
+                        set(field_permissions.get(name, ()) + permission_to_all_fields)
+                    ),
+                    "raise_exception": hasattr(field, "_type") and isinstance(field._type, NonNull),
+                }
 
         super(DjangoObjectType, cls).__init_subclass_with_meta__(
             _meta=_meta, interfaces=interfaces, **options
@@ -155,7 +156,9 @@ class DjangoObjectType(ObjectType):
         if field_permissions:
             cls.__set_permissions_resolvers__(field_permissions)
 
-        cls.field_permissions = field_permissions
+        cls.field_permissions = {
+            name: value["perms"] for name, value in field_permissions.items()
+        }
 
         if not skip_registry:
             registry.register(cls)
@@ -195,14 +198,18 @@ class DjangoObjectType(ObjectType):
     @classmethod
     def __set_permissions_resolvers__(cls, permissions):
         """Set permission resolvers"""
-        for field_name, field_permissions in permissions.items():
-            attr = 'resolve_{}'.format(field_name)
-            resolver = getattr(cls._meta.fields[field_name], 'resolver', None) or getattr(cls, attr, None)
+        for field_name, value in permissions.items():
+            field_permissions = value["perms"]
+            raise_exception = value["raise_exception"]
+            attr = "resolve_{}".format(field_name)
+            resolver = getattr(
+                cls._meta.fields[field_name], "resolver", None
+            ) or getattr(cls, attr, None)
 
             if not hasattr(field_permissions, '__iter__'):
                 field_permissions = tuple(field_permissions)
 
-            setattr(cls, attr, get_auth_resolver(field_name, field_permissions, resolver))
+            setattr(cls, attr, get_auth_resolver(field_name, field_permissions, resolver, raise_exception))
 
     @classmethod
     def __set_as_nullable__(cls, field_permissions, model, registry, interfaces):
