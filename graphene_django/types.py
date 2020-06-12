@@ -72,25 +72,24 @@ class DjangoObjectType(ObjectType):
 
     At least one of the permissions must be accomplished in order to resolve the field.
     """
-
     @classmethod
     def __init_subclass_with_meta__(
-            cls,
-            model=None,
-            registry=None,
-            skip_registry=False,
-            only_fields=(),
-            exclude_fields=(),
-            filter_fields=None,
-            connection=None,
-            connection_class=None,
-            use_connection=None,
-            interfaces=(),
-            field_to_permission=None,
-            permission_to_field=None,
-            permission_to_all_fields=None,
-            _meta=None,
-            **options
+        cls,
+        model=None,
+        registry=None,
+        skip_registry=False,
+        only_fields=(),
+        exclude_fields=(),
+        filter_fields=None,
+        connection=None,
+        connection_class=None,
+        use_connection=None,
+        interfaces=(),
+        field_to_permission=None,
+        permission_to_field=None,
+        permission_to_all_fields=None,
+        _meta=None,
+        **options
     ):
         assert is_valid_django_model(model), (
             'You need to pass a valid Django Model in {}.Meta, received "{}".'
