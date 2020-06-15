@@ -138,17 +138,9 @@ class DjangoObjectType(ObjectType):
         _meta.fields = django_fields
         _meta.connection = connection
 
-        field_permissions = cls.__get_field_permissions__(field_to_permission, permission_to_field)
-        fields_raise_exception = {}
-
-        if permission_to_all_fields:
-            for name, field in django_fields.items():
-                if name == "id":
-                    continue
-                field_permissions[name] = tuple(
-                    set(field_permissions.get(name, ()) + permission_to_all_fields)
-                )
-                fields_raise_exception[name] = hasattr(field, "_type") and isinstance(field._type, NonNull)
+        field_permissions, fields_raise_exception = cls.__get_field_permissions__(django_fields, field_to_permission,
+                                                                                  permission_to_field,
+                                                                                  permission_to_all_fields)
 
         super(DjangoObjectType, cls).__init_subclass_with_meta__(
             _meta=_meta, interfaces=interfaces, **options
@@ -163,18 +155,32 @@ class DjangoObjectType(ObjectType):
             registry.register(cls)
 
     @classmethod
-    def __get_field_permissions__(cls, field_to_permission, permission_to_field):
+    def __get_field_permissions__(cls, django_fields, field_to_permission, permission_to_field,
+                                  permission_to_all_fields):
         """Combines permissions from meta"""
         permissions = field_to_permission if field_to_permission else {}
-        if permission_to_field:
-            perm_to_field = cls.__get_permission_to_fields__(permission_to_field)
-            for field, perms in perm_to_field.items():
-                if field in permissions:
-                    permissions[field] += perms
-                else:
-                    permissions[field] = perms
+        perm_to_field = cls.__get_permission_to_fields__(permission_to_field if permission_to_field else {})
+        fields_raise_exception = {}
 
-        return permissions
+        for name, field in django_fields.items():
+            if name == "id":
+                continue
+
+            if name in perm_to_field:
+                if name in permissions:
+                    permissions[name] += perm_to_field[name]
+                else:
+                    permissions[name] = perm_to_field[name]
+
+            if permission_to_all_fields:
+                permissions[name] = tuple(
+                    set(permissions.get(name, ()) + permission_to_all_fields)
+                )
+
+            if name in permissions:
+                fields_raise_exception[name] = hasattr(field, "_type") and isinstance(field._type, NonNull)
+
+        return permissions, fields_raise_exception
 
     @classmethod
     def __get_permission_to_fields__(cls, permission_to_field):
