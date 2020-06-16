@@ -219,7 +219,7 @@ class DjangoObjectType(ObjectType):
                     get_auth_resolver(field_name, field_permissions, resolver, raise_exception, permission_classes))
 
     @classmethod
-    def __set_as_nullable__(cls, field_permissions, model, registry, interfaces):
+    def __set_as_nullable__(cls, field_permissions, model, registry):
         """Set restricted fields as nullable"""
         django_fields = yank_fields_from_attrs(
             construct_fields(model, registry, field_permissions.keys(), ()),
@@ -229,11 +229,6 @@ class DjangoObjectType(ObjectType):
             if hasattr(field, '_type') and isinstance(field._type, NonNull):
                 field._type = field._type._of_type
                 setattr(cls, name, field)
-
-                for interface in interfaces:
-                    interface_fields = interface._meta.fields
-                    if name in interface_fields:
-                        interface_fields[name] = field
 
     def resolve_id(self, info):
         return self.pk
