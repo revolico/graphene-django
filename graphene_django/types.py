@@ -140,7 +140,7 @@ class DjangoObjectType(ObjectType):
 
         permission_classes = getattr(cls, 'permission_classes', None)
 
-        field_permissions, fields_raise_exception = cls.__get_field_permissions__(field_to_permission,
+        field_permissions, fields_raise_exception = cls.__get_field_permissions__(django_fields, field_to_permission,
                                                                                   permission_to_field,
                                                                                   permission_to_all_fields,
                                                                                   permission_classes)
@@ -158,14 +158,16 @@ class DjangoObjectType(ObjectType):
             registry.register(cls)
 
     @classmethod
-    def __get_field_permissions__(cls, field_to_permission, permission_to_field, permission_to_all_fields,
-                                  permission_classes):
+    def __get_field_permissions__(cls, django_fields, field_to_permission, permission_to_field,
+                                  permission_to_all_fields, permission_classes):
         """Combines permissions from meta"""
         permissions = field_to_permission if field_to_permission else {}
         perm_to_field = cls.__get_permission_to_fields__(permission_to_field if permission_to_field else {})
         fields_raise_exception = {}
 
-        for name, field in cls._meta.fields.items():
+        fields = {**cls._meta.fields, **django_fields}
+
+        for name, field in fields.items():
             if name == "id":
                 continue
 
