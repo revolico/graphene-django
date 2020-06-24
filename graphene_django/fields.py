@@ -163,7 +163,10 @@ class DjangoField(Field):
 
     def get_resolver(self, parent_resolver):
         """Intercept resolver to analyse permissions"""
-        parent_resolver = super(DjangoField, self).get_resolver(parent_resolver)
+
+        if parent_resolver.func != auth_resolver:
+            parent_resolver = super(DjangoField, self).get_resolver(parent_resolver)
+
         if self.permissions:
             return partial(get_unbound_function(self.permissions_resolver), parent_resolver, self.permissions, None,
                            None, True)
