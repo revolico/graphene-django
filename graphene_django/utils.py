@@ -143,7 +143,7 @@ def auth_resolver(parent_resolver, permissions, attname, default_value, raise_ex
 
     if has_permissions(user, permissions) and \
             (not permission_classes or all(
-                (perm.has_permission(user_logged=user, instance=root, **args) for perm in permission_classes))):
+                (perm.has_permission(user=user, instance=root, **args) for perm in permission_classes))):
         if parent_resolver:
             # A resolver is provided in the class
             return resolve_bound_resolver(parent_resolver, root, info, **args)
