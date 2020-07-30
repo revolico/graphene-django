@@ -306,7 +306,14 @@ class DjangoObjectType(ObjectType):
         perm_to_field = cls.__get_permission_to_fields__(permission_to_field if permission_to_field else {})
         fields_raise_exception = {}
 
+        print(permissions)
+        print(perm_to_field)
+
         fields = {**cls._meta.fields, **django_fields}
+
+        print(fields.items())
+        print(cls._meta.fields.items())
+        print(django_fields.items())
 
         for name, field in fields.items():
             if name == "id":
