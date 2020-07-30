@@ -27,11 +27,12 @@ from .utils import (
 if six.PY3:
     from typing import Type
 
+
 ALL_FIELDS = "__all__"
 
 
 def construct_fields(
-        model, registry, only_fields, exclude_fields, convert_choices_to_enum
+    model, registry, only_fields, exclude_fields, convert_choices_to_enum
 ):
     _model_fields = get_model_fields(model)
 

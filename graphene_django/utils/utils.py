@@ -145,14 +145,14 @@ def resolve_bound_resolver(resolver, root, info, **args):
 
 
 def auth_resolver(
-        parent_resolver,
-        permissions,
-        attname,
-        default_value,
-        raise_exception,
-        root,
-        info,
-        **args
+    parent_resolver,
+    permissions,
+    attname,
+    default_value,
+    raise_exception,
+    root,
+    info,
+    **args
 ):
     """
     Middleware resolver to check viewer's permissions
