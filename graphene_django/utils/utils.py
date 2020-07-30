@@ -1,7 +1,6 @@
 import inspect
 
 import six
-from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.db.models.manager import Manager
 from django.utils.translation import ugettext_lazy as _
