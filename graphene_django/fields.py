@@ -5,7 +5,6 @@ from graphql_relay.connection.arrayconnection import (
     connection_from_list_slice,
     get_offset_with_default,
 )
-from promise import Promise
 
 from graphene import NonNull
 from graphene.types import Field, List

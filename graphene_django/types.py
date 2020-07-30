@@ -18,7 +18,6 @@ from .registry import Registry, get_global_registry
 from .settings import graphene_settings
 from .utils import (
     DJANGO_FILTER_INSTALLED,
-    camelize,
     get_model_fields,
     is_valid_django_model,
 )
@@ -83,8 +82,7 @@ def validate_fields(type_, model, fields, only_fields, exclude_fields):
                 (
                     'Field name "{field_name}" matches an attribute on Django model "{app_label}.{object_name}" '
                     "but it's not a model field so Graphene cannot determine what type it should be. "
-                    'Either define the type of the field on DjangoObjectType "{type_}" or remove it from the "fields" '
-                    "list. "
+                    'Either define the type of the field on DjangoObjectType "{type_}" or remove it from the "fields" list.'
                 ).format(
                     field_name=name,
                     app_label=model._meta.app_label,
@@ -97,8 +95,7 @@ def validate_fields(type_, model, fields, only_fields, exclude_fields):
             warnings.warn(
                 (
                     'Field name "{field_name}" doesn\'t exist on Django model "{app_label}.{object_name}". '
-                    'Consider removing the field from the "fields" list of DjangoObjectType "{type_}" because it has '
-                    "no effect. "
+                    'Consider removing the field from the "fields" list of DjangoObjectType "{type_}" because it has no effect.'
                 ).format(
                     field_name=name,
                     app_label=model._meta.app_label,
@@ -126,10 +123,8 @@ def validate_fields(type_, model, fields, only_fields, exclude_fields):
             if not hasattr(model, name):
                 warnings.warn(
                     (
-                        'Django model "{app_label}.{object_name}" does not have a field or attribute named "{'
-                        'field_name}". '
-                        'Consider removing the field from the "exclude" list of DjangoObjectType "{type_}" because it '
-                        "has no effect "
+                        'Django model "{app_label}.{object_name}" does not have a field or attribute named "{field_name}". '
+                        'Consider removing the field from the "exclude" list of DjangoObjectType "{type_}" because it has no effect'
                     ).format(
                         field_name=name,
                         app_label=model._meta.app_label,
