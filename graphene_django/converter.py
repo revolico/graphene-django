@@ -20,13 +20,14 @@ from graphene import (
     Time,
 )
 from graphene.types.json import JSONString
-from graphene.utils.str_converters import to_camel_case, to_const
+from graphene.utils.str_converters import to_camel_case
 from graphql import assert_valid_name
 
 from .settings import graphene_settings
 from .compat import ArrayField, HStoreField, JSONField, RangeField
 from .fields import DjangoListField, DjangoConnectionField
 from .utils import import_single_dispatch
+from .utils.str_converters import to_const
 
 singledispatch = import_single_dispatch()
 
@@ -152,13 +153,9 @@ def convert_field_to_int(field, registry=None):
     return Int(description=field.help_text, required=not field.null)
 
 
+@convert_django_field.register(models.NullBooleanField)
 @convert_django_field.register(models.BooleanField)
 def convert_field_to_boolean(field, registry=None):
-    return NonNull(Boolean, description=field.help_text)
-
-
-@convert_django_field.register(models.NullBooleanField)
-def convert_field_to_nullboolean(field, registry=None):
     return Boolean(description=field.help_text, required=not field.null)
 
 
@@ -259,10 +256,14 @@ def convert_field_to_djangomodel(field, registry=None):
 
 @convert_django_field.register(ArrayField)
 def convert_postgres_array_to_list(field, registry=None):
-    base_type = convert_django_field(field.base_field)
-    if not isinstance(base_type, (List, NonNull)):
-        base_type = type(base_type)
-    return List(base_type, description=field.help_text, required=not field.null)
+    inner_type = convert_django_field(field.base_field)
+    if not isinstance(inner_type, (List, NonNull)):
+        inner_type = (
+            NonNull(type(inner_type))
+            if inner_type.kwargs["required"]
+            else type(inner_type)
+        )
+    return List(inner_type, description=field.help_text, required=not field.null)
 
 
 @convert_django_field.register(HStoreField)
@@ -275,5 +276,9 @@ def convert_postgres_field_to_string(field, registry=None):
 def convert_postgres_range_to_string(field, registry=None):
     inner_type = convert_django_field(field.base_field)
     if not isinstance(inner_type, (List, NonNull)):
-        inner_type = type(inner_type)
+        inner_type = (
+            NonNull(type(inner_type))
+            if inner_type.kwargs["required"]
+            else type(inner_type)
+        )
     return List(inner_type, description=field.help_text, required=not field.null)

@@ -1,6 +1,11 @@
 from functools import partial, reduce
 
 from django.db.models.query import QuerySet
+from graphql_relay.connection.arrayconnection import (
+    connection_from_list_slice,
+    get_offset_with_default,
+)
+from promise import Promise
 
 from graphene import NonNull
 from graphene.types import Field, List
@@ -39,16 +44,21 @@ class DjangoListField(Field):
     def model(self):
         return self._underlying_type._meta.model
 
+    def get_default_queryset(self):
+        return self.model._default_manager.get_queryset()
+
     @staticmethod
-    def list_resolver(django_object_type, resolver, root, info, **args):
+    def list_resolver(
+        django_object_type, resolver, default_queryset, root, info, **args
+    ):
         queryset = maybe_queryset(resolver(root, info, **args))
         if queryset is None:
-            # Default to Django Model queryset
-            # N.B. This happens if DjangoListField is used in the top level Query object
-            model_manager = django_object_type._meta.model.objects
-            queryset = maybe_queryset(
-                django_object_type.get_queryset(model_manager, info)
-            )
+            queryset = default_queryset
+
+        if isinstance(queryset, QuerySet):
+            # Pass queryset to the DjangoObjectType get_queryset method
+            queryset = maybe_queryset(django_object_type.get_queryset(queryset, info))
+
         return queryset
 
     def get_resolver(self, parent_resolver):
@@ -56,7 +66,12 @@ class DjangoListField(Field):
         if isinstance(_type, NonNull):
             _type = _type.of_type
         django_object_type = _type.of_type.of_type
-        return partial(self.list_resolver, django_object_type, parent_resolver)
+        return partial(
+            self.list_resolver,
+            django_object_type,
+            parent_resolver,
+            self.get_default_queryset(),
+        )
 
 
 class DjangoConnectionField(ConnectionField):
@@ -118,28 +133,44 @@ class DjangoConnectionField(ConnectionField):
         return connection._meta.node.get_queryset(queryset, info)
 
     @classmethod
-    def resolve_connection(cls, connection, args, default_manager, iterable):
+    def resolve_connection(cls, connection, args, default_manager, iterable, max_limit=None):
 
         if iterable is None:
             iterable = default_manager
 
         iterable = maybe_queryset(iterable)
+
         if isinstance(iterable, QuerySet):
-            _len = iterable.count()
+            list_length = iterable.count()
+            list_slice_length = (
+                min(max_limit, list_length) if max_limit is not None else list_length
+            )
         else:
-            _len = len(iterable)
+            list_length = len(iterable)
+            list_slice_length = (
+                min(max_limit, list_length) if max_limit is not None else list_length
+            )
+
+        # If after is higher than list_length, connection_from_list_slice
+        # would try to do a negative slicing which makes django throw an
+        # AssertionError
+        after = min(get_offset_with_default(args.get("after"), -1) + 1, list_length)
+
+        if max_limit is not None and "first" not in args:
+            args["first"] = max_limit
+
         connection = connection_from_list_slice(
-            iterable,
+            iterable[after:],
             args,
-            slice_start=0,
-            list_length=_len,
-            list_slice_length=_len,
+            slice_start=after,
+            list_length=list_length,
+            list_slice_length=list_slice_length,
             connection_type=connection,
             edge_type=connection.Edge,
             pageinfo_type=PageInfo,
         )
         connection.iterable = iterable
-        connection.length = _len
+        connection.length = list_length
         return connection
 
     @classmethod
@@ -184,7 +215,7 @@ class DjangoConnectionField(ConnectionField):
         # thus the iterable gets refiltered by resolve_queryset
         # but iterable might be promise
         iterable = queryset_resolver(connection, iterable, info, args)
-        on_resolve = partial(cls.resolve_connection, connection, args, default_manager)
+        on_resolve = partial(cls.resolve_connection, connection, args, default_manager, max_limit=max_limit)
 
         if Promise.is_thenable(iterable):
             return Promise.resolve(iterable).then(on_resolve)

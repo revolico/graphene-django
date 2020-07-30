@@ -1,7 +1,11 @@
+import json
+
+import pytest
 from django.utils.translation import gettext_lazy
+from mock import patch
 
 from graphene_django.utils.utils import has_permissions
-from ..utils import camelize, get_model_fields
+from ..utils import camelize, get_model_fields, GraphQLTestCase
 from .models import Film, Reporter
 
 
@@ -51,3 +55,27 @@ def test_viewer_without_permissions():
 
     viewer_as_perm = has_permissions(Viewer(), [False, False, False])
     assert not viewer_as_perm
+
+
+@pytest.mark.django_db
+@patch("graphene_django.utils.testing.Client.post")
+def test_graphql_test_case_op_name(post_mock):
+    """
+    Test that `GraphQLTestCase.query()`'s `op_name` argument produces an `operationName` field.
+    """
+
+    class TestClass(GraphQLTestCase):
+        GRAPHQL_SCHEMA = True
+
+        def runTest(self):
+            pass
+
+    tc = TestClass()
+    tc.setUpClass()
+    tc.query("query { }", op_name="QueryName")
+    body = json.loads(post_mock.call_args.args[1])
+    # `operationName` field from https://graphql.org/learn/serving-over-http/#post-request
+    assert (
+        "operationName",
+        "QueryName",
+    ) in body.items(), "Field 'operationName' is not present in the final request."
