@@ -4,6 +4,8 @@ import six
 from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.db.models.manager import Manager
+from django.utils.translation import ugettext_lazy as _
+from graphql.error import GraphQLError
 
 # from graphene.utils import LazyList
 from graphene.types.resolver import get_default_resolver
@@ -19,6 +21,16 @@ try:
     DJANGO_FILTER_INSTALLED = True
 except ImportError:
     DJANGO_FILTER_INSTALLED = False
+
+
+class PermissionDenied(GraphQLError):
+    """Exception for permission denied. This exception must be used when a user does not have access to a resource"""
+
+    message = _('Permission denied.')
+    code = 'permission-denied'
+
+    def __init__(self, nodes=None, stack=None, source=None, positions=None, locations=None):
+        super(PermissionDenied, self).__init__(self.__class__.message, nodes, stack, source, positions, locations)
 
 
 def isiterable(value):
@@ -133,14 +145,14 @@ def resolve_bound_resolver(resolver, root, info, **args):
 
 
 def auth_resolver(
-    parent_resolver,
-    permissions,
-    attname,
-    default_value,
-    raise_exception,
-    root,
-    info,
-    **args
+        parent_resolver,
+        permissions,
+        attname,
+        default_value,
+        raise_exception,
+        root,
+        info,
+        **args
 ):
     """
     Middleware resolver to check viewer's permissions
@@ -159,7 +171,11 @@ def auth_resolver(
         raise PermissionDenied()
     user = info.context.user
 
-    if has_permissions(user, permissions):
+    permission_classes = args.pop("permission_classes", None)
+
+    if has_permissions(user, permissions) and \
+            (not permission_classes or all(
+                (perm.has_permission(user=user, instance=root, **args) for perm in permission_classes))):
         if parent_resolver:
             # A resolver is provided in the class
             return resolve_bound_resolver(parent_resolver, root, info, **args)
