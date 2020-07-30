@@ -606,6 +606,7 @@ def test_django_permissions():
         "reporter": ("content_type.permission3",),
         "extra_field": ("content_type.permission3",),
     }
+    print(PermissionArticle.field_permissions)
     assert PermissionArticle.field_permissions == expected
 
 

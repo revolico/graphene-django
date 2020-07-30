@@ -19,7 +19,6 @@ from .registry import Registry, get_global_registry
 from .settings import graphene_settings
 from .utils import (
     DJANGO_FILTER_INSTALLED,
-    camelize,
     get_model_fields,
     is_valid_django_model,
 )
