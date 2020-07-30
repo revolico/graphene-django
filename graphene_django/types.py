@@ -308,7 +308,7 @@ class DjangoObjectType(ObjectType):
 
         fields = {**cls._meta.fields, **django_fields}
 
-        for name, field in django_fields.items():
+        for name, field in cls._meta.fields.items():
             if name == "id":
                 continue
 
