@@ -132,44 +132,28 @@ class DjangoConnectionField(ConnectionField):
         return connection._meta.node.get_queryset(queryset, info)
 
     @classmethod
-    def resolve_connection(cls, connection, args, default_manager, iterable, max_limit=None):
+    def resolve_connection(cls, connection, args, default_manager, iterable):
 
         if iterable is None:
             iterable = default_manager
 
         iterable = maybe_queryset(iterable)
-
         if isinstance(iterable, QuerySet):
-            list_length = iterable.count()
-            list_slice_length = (
-                min(max_limit, list_length) if max_limit is not None else list_length
-            )
+            _len = iterable.count()
         else:
-            list_length = len(iterable)
-            list_slice_length = (
-                min(max_limit, list_length) if max_limit is not None else list_length
-            )
-
-        # If after is higher than list_length, connection_from_list_slice
-        # would try to do a negative slicing which makes django throw an
-        # AssertionError
-        after = min(get_offset_with_default(args.get("after"), -1) + 1, list_length)
-
-        if max_limit is not None and "first" not in args:
-            args["first"] = max_limit
-
+            _len = len(iterable)
         connection = connection_from_list_slice(
-            iterable[after:],
+            iterable,
             args,
-            slice_start=after,
-            list_length=list_length,
-            list_slice_length=list_slice_length,
+            slice_start=0,
+            list_length=_len,
+            list_slice_length=_len,
             connection_type=connection,
             edge_type=connection.Edge,
             pageinfo_type=PageInfo,
         )
         connection.iterable = iterable
-        connection.length = list_length
+        connection.length = _len
         return connection
 
     @classmethod
@@ -214,7 +198,7 @@ class DjangoConnectionField(ConnectionField):
         # thus the iterable gets refiltered by resolve_queryset
         # but iterable might be promise
         iterable = queryset_resolver(connection, iterable, info, args)
-        on_resolve = partial(cls.resolve_connection, connection, args, default_manager, max_limit=max_limit)
+        on_resolve = partial(cls.resolve_connection, connection, args, default_manager)
 
         if Promise.is_thenable(iterable):
             return Promise.resolve(iterable).then(on_resolve)
