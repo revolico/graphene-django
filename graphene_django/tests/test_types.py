@@ -581,7 +581,7 @@ def extra_field_resolver(root, info, **kwargs):
 class PermissionArticle(DjangoObjectType):
     """Basic Type to test"""
 
-    class Meta(object):
+    class Meta:
         """Meta Class"""
 
         field_to_permission = {
