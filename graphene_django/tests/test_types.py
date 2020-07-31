@@ -609,8 +609,7 @@ class PermissionTypesTests(TestCase):
             "reporter": ("content_type.permission3",),
             "extra_field": ("content_type.permission3",),
         }
-        print(PermissionArticle.field_permissions)
-        print(PermissionArticle._meta.fields.items())
+
         self.assertEqual(PermissionArticle.field_permissions, expected)
 
     def test_permission_resolver(self):
