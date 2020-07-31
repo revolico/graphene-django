@@ -278,14 +278,14 @@ class DjangoObjectType(ObjectType):
 
         permission_classes = getattr(cls, 'permission_classes', None)
 
+        super(DjangoObjectType, cls).__init_subclass_with_meta__(
+            _meta=_meta, interfaces=interfaces, **options
+        )
+
         field_permissions, fields_raise_exception = cls.__get_field_permissions__(django_fields, field_to_permission,
                                                                                   permission_to_field,
                                                                                   permission_to_all_fields,
                                                                                   permission_classes)
-
-        super(DjangoObjectType, cls).__init_subclass_with_meta__(
-            _meta=_meta, interfaces=interfaces, **options
-        )
 
         # Validate fields
         validate_fields(cls, model, _meta.fields, fields, exclude)
@@ -308,7 +308,7 @@ class DjangoObjectType(ObjectType):
 
         fields = {**cls._meta.fields, **django_fields}
 
-        for name, field in fields.items():
+        for name, field in cls._meta.fields.items():
             if name == "id":
                 continue
 
