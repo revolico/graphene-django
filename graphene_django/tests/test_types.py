@@ -583,6 +583,8 @@ def extra_field_resolver(root, info, **kwargs):
 class PermissionArticle(DjangoObjectType):
     """Basic Type to test"""
 
+    extra_field = Field(String, resolver=extra_field_resolver)
+
     class Meta:
         """Meta Class"""
 
@@ -594,8 +596,6 @@ class PermissionArticle(DjangoObjectType):
             "content_type.permission3": ("headline", "reporter", "extra_field",)
         }
         model = ArticleModel
-
-    extra_field = Field(String, resolver=extra_field_resolver)
 
     def resolve_headline(self, info, **kwargs):
         return "headline"
