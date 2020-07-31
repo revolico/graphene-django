@@ -626,7 +626,7 @@ class PermissionTypesTests(TestCase):
             context = Context()
 
         resolved = PermissionArticle.resolve_headline(MyType, Info())
-        self.assertEqual(resolved, 'headline')
+        self.assertEqual(resolved, "headline")
 
     def test_resolver_without_permission(self):
         MyType = object()
@@ -658,7 +658,7 @@ class PermissionTypesTests(TestCase):
             context = Context()
 
         resolved = PermissionArticle.resolve_extra_field(MyType, Info())
-        self.assertEqual(resolved, 'extra field')
+        self.assertEqual(resolved, "extra field")
 
     def test_resolver_to_field_without_permission(self):
         MyType = object()

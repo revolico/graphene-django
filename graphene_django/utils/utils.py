@@ -47,11 +47,15 @@ def camelize(data):
 class PermissionDenied(GraphQLError):
     """Exception for permission denied. This exception must be used when a user does not have access to a resource"""
 
-    message = _('Permission denied.')
-    code = 'permission-denied'
+    message = _("Permission denied.")
+    code = "permission-denied"
 
-    def __init__(self, nodes=None, stack=None, source=None, positions=None, locations=None):
-        super(PermissionDenied, self).__init__(self.__class__.message, nodes, stack, source, positions, locations)
+    def __init__(
+        self, nodes=None, stack=None, source=None, positions=None, locations=None
+    ):
+        super(PermissionDenied, self).__init__(
+            self.__class__.message, nodes, stack, source, positions, locations
+        )
 
 
 def get_reverse_fields(model, local_field_names):
@@ -172,9 +176,15 @@ def auth_resolver(
 
     permission_classes = args.pop("permission_classes", None)
 
-    if has_permissions(user, permissions) and \
-            (not permission_classes or all(
-                (perm.has_permission(user=user, instance=root, **args) for perm in permission_classes))):
+    if has_permissions(user, permissions) and (
+        not permission_classes
+        or all(
+            (
+                perm.has_permission(user=user, instance=root, **args)
+                for perm in permission_classes
+            )
+        )
+    ):
         if parent_resolver:
             # A resolver is provided in the class
             return resolve_bound_resolver(parent_resolver, root, info, **args)
