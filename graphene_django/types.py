@@ -385,7 +385,7 @@ class DjangoObjectType(ObjectType):
                 for interface in cls._meta.interfaces:
 
                     resolver = getattr(
-                        interface._meta.fields[field_name], "resolver", None
+                        interface._meta.fields.get(field_name, None), "resolver", None
                     ) or getattr(interface, attr, None)
 
                     if resolver:
