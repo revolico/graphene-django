@@ -380,6 +380,17 @@ class DjangoObjectType(ObjectType):
                 cls._meta.fields[field_name], "resolver", None
             ) or getattr(cls, attr, None)
 
+            if not resolver:
+
+                for interface in cls._meta.interfaces:
+
+                    resolver = getattr(
+                        interface._meta.fields[field_name], "resolver", None
+                    ) or getattr(interface, attr, None)
+
+                    if resolver:
+                        break
+
             if not hasattr(field_permissions, "__iter__"):
                 field_permissions = tuple(field_permissions)
 
