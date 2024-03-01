@@ -7,7 +7,7 @@ from django.db.models import Model
 from django.utils.functional import SimpleLazyObject
 
 import graphene
-from graphene import Field, NonNull
+from graphene import Field, NonNull, Boolean
 from graphene.relay import Connection, Node
 from graphene.types.objecttype import ObjectType, ObjectTypeOptions
 from graphene.types.utils import yank_fields_from_attrs
@@ -30,7 +30,7 @@ ALL_FIELDS = "__all__"
 
 
 def construct_fields(
-    model, registry, only_fields, exclude_fields, convert_choices_to_enum
+    model, registry, only_fields, exclude_fields, convert_choices_to_enum, permission_raise_exception=True
 ):
     _model_fields = get_model_fields(model)
 
@@ -55,9 +55,16 @@ def construct_fields(
             else:
                 _convert_choices_to_enum = False
 
+        if name != 'id' and not permission_raise_exception:
+            field.null = True
+
         converted = convert_django_field_with_choices(
             field, registry, convert_choices_to_enum=_convert_choices_to_enum
         )
+
+        if isinstance(converted, NonNull) and getattr(converted, '_of_type', None) == Boolean and not permission_raise_exception:
+            converted = Boolean(description=field.help_text, required=False)
+
         fields[name] = converted
 
     return fields
@@ -252,7 +259,7 @@ class DjangoObjectType(ObjectType):
             )
 
         django_fields = yank_fields_from_attrs(
-            construct_fields(model, registry, fields, exclude, convert_choices_to_enum),
+            construct_fields(model, registry, fields, exclude, convert_choices_to_enum, permission_raise_exception),
             _as=Field,
         )
 
