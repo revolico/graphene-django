@@ -56,6 +56,7 @@ def construct_fields(
                 _convert_choices_to_enum = False
 
         if name != 'id' and not permission_raise_exception:
+            previous = field.null
             field.null = True
 
         converted = convert_django_field_with_choices(
@@ -64,6 +65,9 @@ def construct_fields(
 
         if isinstance(converted, NonNull) and getattr(converted, '_of_type', None) == Boolean and not permission_raise_exception:
             converted = Boolean(description=field.help_text, required=False)
+
+        if name != 'id' and not permission_raise_exception:
+            field.null = previous
 
         fields[name] = converted
 
