@@ -55,7 +55,6 @@ def construct_fields(
             else:
                 _convert_choices_to_enum = False
 
-        # Make Django field nullable then graphene will generate the graphql field nullable.
         if name != 'id' and not permission_raise_exception:
             previous = field.null
             field.null = True
@@ -67,7 +66,6 @@ def construct_fields(
         if isinstance(converted, NonNull) and getattr(converted, '_of_type', None) == Boolean and not permission_raise_exception:
             converted = Boolean(description=field.help_text, required=False)
 
-        # Restore Django field nullability to original value
         if name != 'id' and not permission_raise_exception:
             field.null = previous
 
@@ -470,13 +468,16 @@ class DjangoObjectType(ObjectType):
 class ErrorType(ObjectType):
     field = graphene.String(required=True)
     messages = graphene.List(graphene.NonNull(graphene.String), required=True)
+    codes = graphene.List(graphene.NonNull(graphene.String), required=True)
 
     @classmethod
     def from_errors(cls, errors):
         data = {
             to_camel_case(key)
             if key != "__all__" and graphene_settings.CAMELCASE_ERRORS
-            else key: value
-            for key, value in errors.items()
+            else key: values
+            for key, values in errors.as_data().items()
         }
-        return [cls(field=key, messages=value) for key, value in data.items()]
+        return [cls(field=key,
+                    messages=[value.message for value in values],
+                    codes=[value.code for value in values]) for key, values in data.items()]
