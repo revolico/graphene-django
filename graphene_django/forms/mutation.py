@@ -59,7 +59,12 @@ class BaseDjangoFormMutation(ClientIDMutation):
 
         pk = input.pop("id", None)
         if pk:
-            instance = cls._meta.model._default_manager.get(pk=pk)
+            arguments = {"pk": pk}
+
+            if getattr(cls._meta.model, "SKIP_CACHE_MUTATION", True):
+                arguments["__skip_cache"] = True
+
+            instance = cls._meta.model._default_manager.get(**arguments)
             kwargs["instance"] = instance
 
         return kwargs
