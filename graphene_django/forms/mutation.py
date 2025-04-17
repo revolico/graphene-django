@@ -58,7 +58,7 @@ class BaseDjangoFormMutation(ClientIDMutation):
         kwargs = {"data": input}
 
         pk = input.pop("id", None)
-        if pk:
+        if pk and hasattr(cls._meta, "model"):
             arguments = {"pk": pk}
 
             if getattr(cls._meta.model, "USE_CACHE", False):
